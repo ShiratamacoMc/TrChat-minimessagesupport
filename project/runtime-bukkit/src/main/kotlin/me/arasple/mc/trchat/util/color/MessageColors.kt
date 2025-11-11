@@ -38,8 +38,19 @@ object MessageColors {
     }
 
     private fun replaceWithPermission(sender: CommandSender, s: String, nodes: List<String>): String {
+        // 检查是否包含MiniMessage格式
+        val hasMiniMessage = MiniMessageUtil.containsMiniMessageFormat(s)
+        
         if (nodes.any { node -> sender.hasPermission("$node*") }) {
-            return s.colorify()
+            // 如果有全部权限，使用混合格式处理（支持MiniMessage和旧格式）
+            return if (hasMiniMessage) {
+                // 如果包含MiniMessage格式，使用混合解析
+                // 注意：这里返回的是legacy格式字符串，因为colorify会处理旧格式
+                // MiniMessage格式会在Component构建时处理
+                s.colorify()
+            } else {
+                s.colorify()
+            }
         }
         var string = s
 

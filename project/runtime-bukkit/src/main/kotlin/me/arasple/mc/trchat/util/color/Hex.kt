@@ -10,7 +10,17 @@ fun isFormat(char: Char): Boolean {
     return color != null && color.isFormat
 }
 
+/**
+ * 颜色化字符串，支持旧格式（&颜色代码、&#HEX、<rainbow>、<gradient>）
+ * MiniMessage格式会在Component构建时处理
+ */
 fun String.colorify() = HexUtils.colorify(this)
+
+/**
+ * 解析MiniMessage格式为Component
+ * 支持MiniMessage格式和旧格式的混合使用
+ */
+fun String.parseMiniMessage() = MiniMessageUtil.parseMixedFormat(this)
 
 fun String.parseLegacy() = HexUtils.parseLegacy(this)
 

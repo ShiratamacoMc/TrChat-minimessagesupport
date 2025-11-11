@@ -62,6 +62,7 @@ subprojects {
         compileOnly("com.google.code.gson:gson:2.8.5")
         compileOnly("com.google.guava:guava:21.0")
         compileOnly("net.kyori:adventure-api:4.24.0")
+        compileOnly("net.kyori:adventure-text-minimessage:4.25.0")
     }
 
     // 编译配置

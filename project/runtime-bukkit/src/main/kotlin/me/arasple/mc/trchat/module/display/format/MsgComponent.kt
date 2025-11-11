@@ -5,6 +5,8 @@ import me.arasple.mc.trchat.module.display.format.obj.Style.Companion.applyTo
 import me.arasple.mc.trchat.module.display.function.Function
 import me.arasple.mc.trchat.module.internal.script.Condition
 import me.arasple.mc.trchat.util.color.CustomColor
+import me.arasple.mc.trchat.util.color.MiniMessageUtil
+import me.arasple.mc.trchat.util.color.parseMiniMessage
 import me.arasple.mc.trchat.util.isDragonCoreHooked
 import me.arasple.mc.trchat.util.pass
 import me.arasple.mc.trchat.util.session
@@ -60,8 +62,21 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
 
         // 非玩家 不处理functions
         if (sender !is Player) {
-            val defaultColor = defaultColor[0].first
-            return toTextComponent(sender, defaultColor.colored(sender, message))
+            // 只使用MiniMessage，不接受传统代码
+            if (Components.useAdventure) {
+                // 直接使用MiniMessage解析，不经过colored处理
+                val parsedComponent = message.parseMiniMessage()
+                return AdventureComponent(parsedComponent)
+            } else {
+                // 如果不使用Adventure，也尝试使用MiniMessage
+                try {
+                    val parsedComponent = message.parseMiniMessage()
+                    return AdventureComponent(parsedComponent)
+                } catch (e: Exception) {
+                    val defaultColor = defaultColor[0].first
+                    return toTextComponent(sender, defaultColor.colored(sender, message))
+                }
+            }
         }
 
         // 创建{{xxx:xxx}}
@@ -82,18 +97,46 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
                 }
                 continue
             }
-            component.append(toTextComponent(sender, defaultColor.colored(sender, part.text)))
+            // 只使用MiniMessage，不接受传统代码
+            val partText = part.text
+            if (Components.useAdventure) {
+                // 直接使用MiniMessage解析，不经过colored处理
+                val parsedComponent = partText.parseMiniMessage()
+                component.append(AdventureComponent(parsedComponent))
+            } else {
+                // 如果不使用Adventure，也尝试使用MiniMessage
+                try {
+                    val parsedComponent = partText.parseMiniMessage()
+                    component.append(AdventureComponent(parsedComponent))
+                } catch (e: Exception) {
+                    // 如果失败，使用旧格式处理
+                    component.append(toTextComponent(sender, defaultColor.colored(sender, partText)))
+                }
+            }
         }
         return component
     }
 
     override fun toTextComponent(sender: CommandSender, vararg vars: String): ComponentText {
         val message = vars[0]
-        val component = if (isDragonCoreHooked) {
+        
+        // 只使用MiniMessage，不接受传统代码
+        val component = if (Components.useAdventure) {
+            // 使用MiniMessage解析
+            val parsedComponent = message.parseMiniMessage()
+            AdventureComponent(parsedComponent)
+        } else if (isDragonCoreHooked) {
             Components.text(message, color = false)
         } else {
-            Components.text(message)
+            // 如果不使用Adventure，也尝试使用MiniMessage
+            try {
+                val parsedComponent = message.parseMiniMessage()
+                AdventureComponent(parsedComponent)
+            } catch (e: Exception) {
+                Components.text(message)
+            }
         }
+        
         style.forEach {
             it.applyTo(component, sender, *vars)
         }

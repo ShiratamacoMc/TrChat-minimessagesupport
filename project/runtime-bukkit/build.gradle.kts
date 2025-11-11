@@ -14,6 +14,7 @@ dependencies {
 
     compileOnly("me.clip:placeholderapi:2.11.6") { isTransitive = false }
     compileOnly("com.discordsrv:discordsrv:1.26.0") { isTransitive = false }
+    compileOnly("net.kyori:adventure-text-serializer-legacy:4.24.0")
 }
 
 taboolib { subproject = true }
