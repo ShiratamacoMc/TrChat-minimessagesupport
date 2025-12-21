@@ -35,7 +35,12 @@ class AdventureComponent() : ComponentText {
         get() = Component.text().append(left, latest).build()
 
     companion object {
-        private val miniMessage: MiniMessage by lazy { MiniMessage.miniMessage() }
+        // 使用 MiniMessage.builder() 构建实例，确保包含所有标准标签（包括 head 等新标签）
+        private val miniMessage: MiniMessage by lazy { 
+            MiniMessage.builder()
+                .tags(TagResolver.standard())
+                .build()
+        }
         private val legacySerializer: LegacyComponentSerializer by lazy { LegacyComponentSerializer.legacySection() }
 
         private operator fun TextComponent.Builder.plusAssign(other: Component) {
@@ -81,19 +86,78 @@ class AdventureComponent() : ComponentText {
 
     override fun append(text: String, color: Boolean): ComponentText {
         flush()
-        if (color) {
-            // 直接使用MiniMessage解析
-            try {
+        
+        // 始终尝试解析 MiniMessage 格式，因为它不仅包含颜色，还有 hover、click、font 等功能
+        try {
+            if (color) {
+                // color = true: 转换旧格式 + 解析 MiniMessage
+                val converted = convertLegacyToMiniMessage(text)
+                val parsedComponent = miniMessage.deserialize(converted)
+                latest += parsedComponent
+            } else {
+                // color = false: 只解析 MiniMessage，不转换旧格式
+                // 这样可以保留 MiniMessage 的所有功能（hover、click、font 等）
                 val parsedComponent = miniMessage.deserialize(text)
                 latest += parsedComponent
-            } catch (e: Exception) {
-                // 如果解析失败，回退到legacy格式
-                latest += legacySerializer.deserialize(text)
             }
-        } else {
-            latest.content(text)
+        } catch (e: Exception) {
+            // 如果 MiniMessage 解析失败
+            if (color) {
+                // color = true: 尝试 legacy 格式
+                try {
+                    latest += legacySerializer.deserialize(text)
+                } catch (e2: Exception) {
+                    // 最后回退到纯文本
+                    latest.content(text)
+                }
+            } else {
+                // color = false: 直接使用纯文本
+                latest.content(text)
+            }
         }
         return this
+    }
+    
+    /**
+     * 转换旧格式到 MiniMessage（简化版本，用于 module-chat）
+     */
+    private fun convertLegacyToMiniMessage(text: String): String {
+        if (!text.contains('&') && !text.contains('§')) {
+            return text
+        }
+        
+        var result = text
+        
+        // 转换 hex 颜色: &#FFFFFF -> <#FFFFFF>
+        result = result.replace(Regex("&#([A-Fa-f0-9]{6})")) { "<#${it.groupValues[1]}>" }
+        result = result.replace(Regex("&\\{#([A-Fa-f0-9]{6})}")) { "<#${it.groupValues[1]}>" }
+        
+        // 转换颜色代码
+        val colorMap = mapOf(
+            '0' to "<black>", '1' to "<dark_blue>", '2' to "<dark_green>", '3' to "<dark_aqua>",
+            '4' to "<dark_red>", '5' to "<dark_purple>", '6' to "<gold>", '7' to "<gray>",
+            '8' to "<dark_gray>", '9' to "<blue>", 'a' to "<green>", 'b' to "<aqua>",
+            'c' to "<red>", 'd' to "<light_purple>", 'e' to "<yellow>", 'f' to "<white>",
+            'r' to "<reset>", 'k' to "<obfuscated>", 'l' to "<bold>", 'm' to "<strikethrough>",
+            'n' to "<underline>", 'o' to "<italic>"
+        )
+        
+        val builder = StringBuilder(result.length + 50)
+        var i = 0
+        while (i < result.length) {
+            if (i < result.length - 1 && (result[i] == '&' || result[i] == '§')) {
+                val code = result[i + 1].lowercaseChar()
+                if (colorMap.containsKey(code)) {
+                    builder.append(colorMap[code])
+                    i += 2
+                    continue
+                }
+            }
+            builder.append(result[i])
+            i++
+        }
+        
+        return builder.toString()
     }
 
     override fun append(other: ComponentText): ComponentText {
@@ -148,7 +212,10 @@ class AdventureComponent() : ComponentText {
 
     override fun hoverText(text: ComponentText): ComponentText {
         text as? AdventureComponent ?: error("Unsupported component type.")
-        latest.hoverEvent(HoverEvent.showText(text.component))
+        // 先 flush，确保所有内容都在 left 中
+        flush()
+        // 在 left 上设置 hover 事件
+        left.hoverEvent(HoverEvent.showText(text.component))
         return this
     }
 
@@ -336,14 +403,5 @@ class AdventureComponent() : ComponentText {
 
     override fun toString(): String {
         return toRawMessage()
-    }
-
-    companion object {
-        private val miniMessage: MiniMessage by lazy { MiniMessage.miniMessage() }
-        private val legacySerializer: LegacyComponentSerializer by lazy { LegacyComponentSerializer.legacySection() }
-
-        private operator fun TextComponent.Builder.plusAssign(other: Component) {
-            append(other)
-        }
     }
 }

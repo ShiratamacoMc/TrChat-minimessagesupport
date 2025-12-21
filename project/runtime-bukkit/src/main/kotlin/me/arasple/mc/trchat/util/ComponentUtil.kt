@@ -25,16 +25,8 @@ import taboolib.platform.util.*
  * 解析简单文本为 Component，支持 MiniMessage 格式
  */
 fun String.parseSimple(): ComponentText {
-    return if (Components.useAdventure) {
-        // 使用 MiniMessage 解析，支持完整的标签
-        val parsedComponent = this.parseMiniMessage()
-        AdventureComponent(parsedComponent)
-    } else {
-        // 回退到旧的 component 构建方式
-        component().build {
-            transform { it.parseMiniMessage().toString() }
-        }
-    }
+    // 直接使用 Components.text，它会根据 useAdventure 自动选择正确的实现
+    return Components.text(this)
 }
 
 fun ComponentText.hoverItemFixed(item: ItemStack): ComponentText {

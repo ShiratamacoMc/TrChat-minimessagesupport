@@ -61,10 +61,13 @@ class NMSImpl : NMS() {
     }
 
     override fun sendMessage(receiver: Player, component: ComponentText, sender: UUID?, usePacket: Boolean) {
+        println("[TrChat Debug] NMSImpl.sendMessage called, usePacket=$usePacket, versionId=$versionId")
         if (!usePacket || Folia.isFolia || ServerUtil.isModdedServer) {
+            println("[TrChat Debug] Using component.sendTo")
             component.sendTo(adaptPlayer(receiver))
             return
         }
+        println("[TrChat Debug] Using packet send")
         if (versionId >= 11900) {
             val player = (receiver as CraftPlayer19).handle
             player.sendSystemMessage(craftChatMessageFromComponent(component) as NMSIChatBaseComponent)

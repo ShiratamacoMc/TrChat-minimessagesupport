@@ -33,16 +33,15 @@ class Text(val content: String, val condition: Condition?) {
         }
         text = text.replaceWithOrder(*vars)
         
-        // 直接使用MiniMessage解析
+        // 使用 MiniMessage 解析
         return if (Components.useAdventure) {
             val parsedComponent = text.parseMiniMessage()
             AdventureComponent(parsedComponent)
         } else if (isDragonCoreHooked) {
             Components.text(text, color = false)
         } else {
-            // 即使不使用Adventure，也直接调用MiniMessage
-            val parsedComponent = text.parseMiniMessage()
-            AdventureComponent(parsedComponent)
+            // 非 Adventure 环境，使用 Components.text
+            Components.text(text)
         }
     }
 }

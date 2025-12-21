@@ -20,26 +20,10 @@ import java.util.regex.Pattern
 object MiniMessageUtil {
 
     // 使用单例模式，避免重复创建实例，提升性能
+    // 使用 MiniMessage.builder() 构建实例，确保包含所有标准标签（包括 head 等新标签）
     private val miniMessage: MiniMessage by lazy {
         MiniMessage.builder()
-            .tags(
-                TagResolver.builder()
-                    .resolver(StandardTags.color())
-                    .resolver(StandardTags.decorations())
-                    .resolver(StandardTags.gradient())
-                    .resolver(StandardTags.rainbow())
-                    .resolver(StandardTags.reset())
-                    .resolver(StandardTags.clickEvent())
-                    .resolver(StandardTags.hoverEvent())
-                    .resolver(StandardTags.keybind())
-                    .resolver(StandardTags.translatable())
-                    .resolver(StandardTags.insertion())
-                    .resolver(StandardTags.font())
-                    .resolver(StandardTags.newline())
-                    .resolver(StandardTags.selector())
-                    .resolver(StandardTags.transition())
-                    .build()
-            )
+            .tags(TagResolver.standard())
             .build()
     }
     

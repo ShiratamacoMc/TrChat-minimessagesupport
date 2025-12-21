@@ -62,9 +62,14 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
 
         // 非玩家 不处理functions
         if (sender !is Player) {
-            // 直接使用MiniMessage解析
-            val parsedComponent = message.parseMiniMessage()
-            return AdventureComponent(parsedComponent)
+            // 使用 MiniMessage 解析
+            if (Components.useAdventure) {
+                val parsedComponent = message.parseMiniMessage()
+                return AdventureComponent(parsedComponent)
+            } else {
+                // 非 Adventure 环境，使用 Components.text
+                return Components.text(message)
+            }
         }
 
         // 创建{{xxx:xxx}}
@@ -85,10 +90,15 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
                 }
                 continue
             }
-            // 直接使用MiniMessage解析
+            // 使用 MiniMessage 解析
             val partText = part.text
-            val parsedComponent = partText.parseMiniMessage()
-            component.append(AdventureComponent(parsedComponent))
+            if (Components.useAdventure) {
+                val parsedComponent = partText.parseMiniMessage()
+                component.append(AdventureComponent(parsedComponent))
+            } else {
+                // 非 Adventure 环境，使用 Components.text
+                component.append(Components.text(partText))
+            }
         }
         return component
     }
@@ -107,6 +117,7 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
         style.forEach {
             it.applyTo(component, sender, *vars)
         }
+        
         return component
     }
 

@@ -58,15 +58,18 @@ sealed interface Style {
                 if (Settings.simpleHover) {
                     component.hoverText(content.parseSimple())
                 } else {
-                    // 使用 MiniMessage 解析，支持完整的 MiniMessage 标签
-                    if (isDragonCoreHooked) {
+                    // 直接使用 Adventure API 设置 hover
+                    if (Components.useAdventure && component is AdventureComponent) {
+                        // 解析 hover 内容（支持旧格式和 MiniMessage）
+                        val hoverContent = content.parseMiniMessage()
+                        // 先 flush，确保所有内容都在 left 中
+                        component.flush()
+                        // 直接在 left builder 上设置 hover
+                        component.left.hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(hoverContent))
+                    } else if (isDragonCoreHooked) {
                         component.hoverText(Components.text(content, color = false))
-                    } else if (Components.useAdventure) {
-                        // 直接使用 MiniMessage 解析 hover 内容
-                        val parsedComponent = content.parseMiniMessage()
-                        component.hoverText(AdventureComponent(parsedComponent))
                     } else {
-                        // 回退到旧的解析方式
+                        // 回退到默认方式
                         component.hoverText(Components.text(content))
                     }
                 }
