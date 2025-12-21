@@ -7,15 +7,14 @@ import taboolib.common.io.runningClassesWithoutLibrary
 import taboolib.common.platform.ProxyCommandSender
 import taboolib.common.platform.ProxyPlayer
 import taboolib.common.platform.function.adaptPlayer
-import taboolib.common.platform.function.info
 import taboolib.common.platform.function.severe
 import taboolib.common.platform.function.warning
 import taboolib.common.util.VariableReader
-import taboolib.common.util.random
 import taboolib.common.util.replaceWithOrder
 import taboolib.module.chat.ComponentText
 import taboolib.module.chat.Components
 import taboolib.module.lang.*
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class Function(val id: String) {
 
@@ -37,21 +36,14 @@ abstract class Function(val id: String) {
         val functions = mutableListOf<Function>()
 
         @JvmStatic
-        val args = arrayOfNulls<String>(1000)
+        private val args = arrayOfNulls<String>(1000)
+
+        private val cur = AtomicInteger(0)
 
         fun push(arg: Any): Int {
-            var i = random(1000)
-            var retry = 0
-            while (args[i] != null) {
-                if (retry >= 15) {
-                    warning("Unexpected function 'args' status! Please contact the maintainer!")
-                    args.forEachIndexed { i, s ->
-                        if (s != null) info("${i}: $s")
-                    }
-                    break
-                }
-                retry++
-                i = random(1000)
+            val i = cur.getAndIncrement() % 1000
+            if (args[i] != null) {
+                warning("Unexpected function 'args' status! Please contact the maintainer!")
             }
             args[i] = arg.toString()
             return i
