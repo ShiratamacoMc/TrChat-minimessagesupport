@@ -33,24 +33,16 @@ class Text(val content: String, val condition: Condition?) {
         }
         text = text.replaceWithOrder(*vars)
         
-        // 只使用MiniMessage，不接受传统代码
-        // 不调用colorify()，避免破坏MiniMessage标签
+        // 直接使用MiniMessage解析
         return if (Components.useAdventure) {
-            // 使用MiniMessage解析
             val parsedComponent = text.parseMiniMessage()
             AdventureComponent(parsedComponent)
         } else if (isDragonCoreHooked) {
             Components.text(text, color = false)
         } else {
-            // 如果不使用Adventure，尝试使用MiniMessage（可能通过反射）
-            try {
-                val minimessageUtilClass = Class.forName("me.arasple.mc.trchat.util.color.MiniMessageUtil")
-                val parseMethod = minimessageUtilClass.getMethod("parseMixedFormat", String::class.java)
-                val parsedComponent = parseMethod.invoke(null, text) as net.kyori.adventure.text.Component
-                AdventureComponent(parsedComponent)
-            } catch (e: Exception) {
-                Components.text(text)
-            }
+            // 即使不使用Adventure，也直接调用MiniMessage
+            val parsedComponent = text.parseMiniMessage()
+            AdventureComponent(parsedComponent)
         }
     }
 }

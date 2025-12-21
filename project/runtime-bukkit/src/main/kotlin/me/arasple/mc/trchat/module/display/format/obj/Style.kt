@@ -3,7 +3,7 @@ package me.arasple.mc.trchat.module.display.format.obj
 import me.arasple.mc.trchat.module.conf.file.Settings
 import me.arasple.mc.trchat.module.internal.script.Condition
 import me.arasple.mc.trchat.util.*
-import me.arasple.mc.trchat.util.color.colorify
+import me.arasple.mc.trchat.util.color.parseMiniMessage
 import me.arasple.mc.trchat.util.color.parseToShadowColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.command.CommandSender
@@ -58,10 +58,16 @@ sealed interface Style {
                 if (Settings.simpleHover) {
                     component.hoverText(content.parseSimple())
                 } else {
+                    // 使用 MiniMessage 解析，支持完整的 MiniMessage 标签
                     if (isDragonCoreHooked) {
-                        component.hoverText(Components.text(content.colorify(), color = false))
+                        component.hoverText(Components.text(content, color = false))
+                    } else if (Components.useAdventure) {
+                        // 直接使用 MiniMessage 解析 hover 内容
+                        val parsedComponent = content.parseMiniMessage()
+                        component.hoverText(AdventureComponent(parsedComponent))
                     } else {
-                        component.hoverText(content.colorify())
+                        // 回退到旧的解析方式
+                        component.hoverText(Components.text(content))
                     }
                 }
             }

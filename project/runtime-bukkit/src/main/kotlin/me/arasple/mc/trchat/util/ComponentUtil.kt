@@ -3,7 +3,7 @@ package me.arasple.mc.trchat.util
 import me.arasple.mc.trchat.TrChat
 import me.arasple.mc.trchat.api.nms.NMS
 import me.arasple.mc.trchat.module.adventure.hoverItemAdventure
-import me.arasple.mc.trchat.util.color.colorify
+import me.arasple.mc.trchat.util.color.parseMiniMessage
 import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import org.bukkit.Material
@@ -14,14 +14,27 @@ import org.bukkit.inventory.meta.ItemMeta
 import taboolib.module.chat.ComponentText
 import taboolib.module.chat.Components
 import taboolib.module.chat.component
+import taboolib.module.chat.impl.AdventureComponent
 import taboolib.module.chat.impl.DefaultComponent
 import taboolib.module.nms.MinecraftVersion.versionId
 import taboolib.module.nms.NMSItemTag
 import taboolib.module.nms.getI18nName
 import taboolib.platform.util.*
 
-fun String.parseSimple() = component().build {
-    transform { it.colorify() }
+/**
+ * 解析简单文本为 Component，支持 MiniMessage 格式
+ */
+fun String.parseSimple(): ComponentText {
+    return if (Components.useAdventure) {
+        // 使用 MiniMessage 解析，支持完整的标签
+        val parsedComponent = this.parseMiniMessage()
+        AdventureComponent(parsedComponent)
+    } else {
+        // 回退到旧的 component 构建方式
+        component().build {
+            transform { it.parseMiniMessage().toString() }
+        }
+    }
 }
 
 fun ComponentText.hoverItemFixed(item: ItemStack): ComponentText {

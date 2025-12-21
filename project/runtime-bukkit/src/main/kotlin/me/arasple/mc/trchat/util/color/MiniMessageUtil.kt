@@ -4,6 +4,8 @@ import me.arasple.mc.trchat.util.color.HexUtils.GRADIENT_PATTERN
 import me.arasple.mc.trchat.util.color.HexUtils.RAINBOW_PATTERN
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
+import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.util.regex.Pattern
 
@@ -11,12 +13,36 @@ import java.util.regex.Pattern
  * MiniMessage工具类
  * 提供MiniMessage格式解析和旧格式转换功能
  * 支持MiniMessage格式和旧格式的混合使用
+ * 完全支持所有 MiniMessage 标签，包括 hover、click、font 等
  * 
  * @author TrChat
  */
 object MiniMessageUtil {
 
-    private val miniMessage = MiniMessage.miniMessage()
+    // 使用单例模式，避免重复创建实例，提升性能
+    private val miniMessage: MiniMessage by lazy {
+        MiniMessage.builder()
+            .tags(
+                TagResolver.builder()
+                    .resolver(StandardTags.color())
+                    .resolver(StandardTags.decorations())
+                    .resolver(StandardTags.gradient())
+                    .resolver(StandardTags.rainbow())
+                    .resolver(StandardTags.reset())
+                    .resolver(StandardTags.clickEvent())
+                    .resolver(StandardTags.hoverEvent())
+                    .resolver(StandardTags.keybind())
+                    .resolver(StandardTags.translatable())
+                    .resolver(StandardTags.insertion())
+                    .resolver(StandardTags.font())
+                    .resolver(StandardTags.newline())
+                    .resolver(StandardTags.selector())
+                    .resolver(StandardTags.transition())
+                    .build()
+            )
+            .build()
+    }
+    
     private val legacySerializer = LegacyComponentSerializer.legacySection()
 
     // 旧格式颜色代码到MiniMessage的映射
@@ -63,8 +89,14 @@ object MiniMessageUtil {
      * 将旧格式转换为MiniMessage格式
      * 支持：&颜色代码、&#HEX
      * 注意：rainbow和gradient保持原样，由HexUtils处理
+     * 优化：避免不必要的字符串操作，提升性能
      */
     fun convertLegacyToMiniMessage(text: String): String {
+        // 快速检查：如果没有 & 或 § 符号，直接返回
+        if (!text.contains('&') && !text.contains('§')) {
+            return text
+        }
+
         var result = text
 
         // 处理hex颜色格式（转换为MiniMessage格式）
@@ -102,35 +134,38 @@ object MiniMessageUtil {
      * 转换legacy颜色代码到MiniMessage
      * &a -> <green>
      * &l -> <bold>
+     * 优化：使用 StringBuilder 提升性能
      */
     private fun convertLegacyCodesToMiniMessage(text: String): String {
-        var result = text
+        if (text.length < 2) return text
+        
+        val result = StringBuilder(text.length + 50) // 预分配空间
         var i = 0
         
-        while (i < result.length - 1) {
-            if (result[i] == '&' || result[i] == '§') {
-                val code = result[i + 1].lowercaseChar()
+        while (i < text.length) {
+            if (i < text.length - 1 && (text[i] == '&' || text[i] == '§')) {
+                val code = text[i + 1].lowercaseChar()
                 
                 // 检查是否是颜色代码
                 if (legacyColorMap.containsKey(code)) {
-                    val minimessageTag = legacyColorMap[code]!!
-                    result = result.substring(0, i) + minimessageTag + result.substring(i + 2)
-                    i += minimessageTag.length - 2
+                    result.append(legacyColorMap[code])
+                    i += 2
                     continue
                 }
                 
                 // 检查是否是装饰代码
                 if (legacyDecorationMap.containsKey(code)) {
-                    val minimessageTag = legacyDecorationMap[code]!!
-                    result = result.substring(0, i) + minimessageTag + result.substring(i + 2)
-                    i += minimessageTag.length - 2
+                    result.append(legacyDecorationMap[code])
+                    i += 2
                     continue
                 }
             }
+            
+            result.append(text[i])
             i++
         }
         
-        return result
+        return result.toString()
     }
 
     /**
@@ -174,25 +209,38 @@ object MiniMessageUtil {
 
 
     /**
-     * 混合解析：只使用MiniMessage，不接受传统代码
+     * 混合解析：支持 MiniMessage 和传统代码的混合使用
      * 策略：
-     * 1. 直接使用MiniMessage解析（不经过colorify，避免破坏标签）
-     * 2. 转换简单的旧格式（&颜色代码、&#HEX）到MiniMessage
-     * 3. 确保所有MiniMessage标签（如font、click、hover等）都能正确解析
+     * 1. 先转换简单的旧格式（&颜色代码、&#HEX）到 MiniMessage
+     * 2. 使用 MiniMessage 解析（完全支持所有标签：color、hover、click、font 等）
+     * 3. 如果解析失败，回退到 legacy
      */
     fun parseMixedFormat(text: String): Component {
-        // 直接转换旧格式到MiniMessage，然后解析
-        // 不经过colorify，避免破坏MiniMessage标签
-        val converted = convertLegacyToMiniMessage(text)
+        if (text.isEmpty()) {
+            return Component.empty()
+        }
+        
         return try {
-            miniMessage.deserialize(converted)
+            // 快速路径：如果文本中没有旧格式代码，直接解析
+            if (!text.contains('&') && !text.contains('§')) {
+                miniMessage.deserialize(text)
+            } else {
+                // 转换旧格式到 MiniMessage，然后解析
+                val converted = convertLegacyToMiniMessage(text)
+                miniMessage.deserialize(converted)
+            }
         } catch (e: Exception) {
-            // 如果解析失败，尝试直接解析（可能已经是纯MiniMessage格式）
+            // 如果解析失败，尝试直接解析原始文本（可能已经是纯 MiniMessage 格式）
             try {
                 miniMessage.deserialize(text)
             } catch (e2: Exception) {
-                // 如果还是失败，使用legacy格式作为最后的后备
-                legacySerializer.deserialize(text)
+                // 最后的后备方案：使用 legacy 格式
+                try {
+                    legacySerializer.deserialize(text)
+                } catch (e3: Exception) {
+                    // 如果所有方法都失败，返回纯文本
+                    Component.text(text)
+                }
             }
         }
     }

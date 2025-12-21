@@ -9,6 +9,7 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -32,6 +33,15 @@ class AdventureComponent() : ComponentText {
     var latest: TextComponent.Builder = Component.text()
     val component: Component
         get() = Component.text().append(left, latest).build()
+
+    companion object {
+        private val miniMessage: MiniMessage by lazy { MiniMessage.miniMessage() }
+        private val legacySerializer: LegacyComponentSerializer by lazy { LegacyComponentSerializer.legacySection() }
+
+        private operator fun TextComponent.Builder.plusAssign(other: Component) {
+            append(other)
+        }
+    }
 
     override fun toRawMessage(): String {
         return GsonComponentSerializer.gson().serialize(component)
@@ -72,25 +82,13 @@ class AdventureComponent() : ComponentText {
     override fun append(text: String, color: Boolean): ComponentText {
         flush()
         if (color) {
-            // 只使用MiniMessage，不接受传统代码
-            // 优先使用MiniMessage解析（使用反射检查MiniMessageUtil是否可用）
+            // 直接使用MiniMessage解析
             try {
-                val minimessageUtilClass = Class.forName("me.arasple.mc.trchat.util.color.MiniMessageUtil")
-                val parseMethod = minimessageUtilClass.getMethod("parseMixedFormat", String::class.java)
-                val parsedComponent = parseMethod.invoke(null, text) as Component
+                val parsedComponent = miniMessage.deserialize(text)
                 latest += parsedComponent
             } catch (e: Exception) {
-                // 如果MiniMessageUtil不可用或解析失败，尝试直接使用MiniMessage
-                try {
-                    val miniMessageClass = Class.forName("net.kyori.adventure.text.minimessage.MiniMessage")
-                    val miniMessageInstance = miniMessageClass.getMethod("miniMessage").invoke(null)
-                    val deserializeMethod = miniMessageClass.getMethod("deserialize", String::class.java)
-                    val parsedComponent = deserializeMethod.invoke(miniMessageInstance, text) as Component
-                    latest += parsedComponent
-                } catch (e2: Exception) {
-                    // 如果都失败，回退到legacy格式
-                    latest += LegacyComponentSerializer.legacySection().deserialize(text)
-                }
+                // 如果解析失败，回退到legacy格式
+                latest += legacySerializer.deserialize(text)
             }
         } else {
             latest.content(text)
@@ -341,6 +339,8 @@ class AdventureComponent() : ComponentText {
     }
 
     companion object {
+        private val miniMessage: MiniMessage by lazy { MiniMessage.miniMessage() }
+        private val legacySerializer: LegacyComponentSerializer by lazy { LegacyComponentSerializer.legacySection() }
 
         private operator fun TextComponent.Builder.plusAssign(other: Component) {
             append(other)
