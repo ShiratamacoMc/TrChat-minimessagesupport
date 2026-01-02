@@ -8,7 +8,7 @@ repositories {
 
 dependencies {
     compileOnly(project(":project:common"))
-//    compileOnly(project(":project:module-chat"))
+    compileOnly(project(":project:module-chat"))
     compileOnly("ink.ptms.core:v12107:12107:universal")
 
     compileOnly("com.discordsrv:discordsrv:1.26.0") { isTransitive = false }

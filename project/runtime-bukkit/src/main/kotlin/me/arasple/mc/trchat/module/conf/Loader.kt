@@ -12,6 +12,7 @@ import me.arasple.mc.trchat.module.display.format.Format
 import me.arasple.mc.trchat.module.display.format.Group
 import me.arasple.mc.trchat.module.display.format.JsonComponent
 import me.arasple.mc.trchat.module.display.format.MsgComponent
+import me.arasple.mc.trchat.module.display.format.obj.Head
 import me.arasple.mc.trchat.module.display.format.obj.Style
 import me.arasple.mc.trchat.module.display.format.obj.Text
 import me.arasple.mc.trchat.module.display.function.CustomFunction
@@ -248,8 +249,9 @@ object Loader {
             val defaultColor = content["default-color"]!!.serialize().map { CustomColor.get(it.first) to it.second.getCondition() }
             MsgComponent(defaultColor, style.filterNotNull())
         } else {
-            val text = Property.serialize(content["text"] ?: "null").map { Text(it.first, it.second.getCondition()) }
-            JsonComponent(text, style.filterNotNull())
+            val text = content["text"]?.serialize()?.map { Text(it.first, it.second.getCondition()) } ?: emptyList()
+            val head = content["head"]?.serialize()?.map { Head(it.first, it.second.getCondition()) } ?: emptyList()
+            JsonComponent(text, head, style.filterNotNull())
         }
     }
 

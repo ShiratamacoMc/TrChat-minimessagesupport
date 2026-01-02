@@ -25,13 +25,11 @@ taboolib {
 //        }
     }
     relocate("com.eatthepath.uuid.", "${rootProject.group}.library.uuid.")
-//    relocate("net.md_5.bungee", "net.md_5.bungee121")
 //    relocate("com.electronwill.nightconfig", "com.electronwill.nightconfig_3_6_7")
 }
 
 dependencies {
     taboo("com.eatthepath:fast-uuid:0.2.0")
-//    taboo("net.md-5:bungeecord-chat:1.21-R0.3") { isTransitive = false }
 }
 
 tasks {

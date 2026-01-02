@@ -10,6 +10,8 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
+import net.kyori.adventure.text.`object`.ObjectContents
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -192,6 +194,19 @@ class AdventureComponent() : ComponentText {
     override fun appendSelector(selector: String): ComponentText {
         flush()
         latest += Component.selector(selector)
+        return this
+    }
+
+    override fun appendHead(name: String?, id: UUID?, hat: Boolean, texture: String?): ComponentText {
+        flush()
+        latest += Component.`object`(ObjectContents.playerHead().also {
+            it.name(name)
+            it.id(id)
+            it.hat(hat)
+            if (texture != null) {
+                it.texture(Key.key(texture))
+            }
+        }.build())
         return this
     }
 

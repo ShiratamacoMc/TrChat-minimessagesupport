@@ -19,18 +19,16 @@ import taboolib.module.chat.impl.AdventureComponent
  * @author ItsFlicker
  * @since 2022/1/21 23:21
  */
-class Text(val content: String, val condition: Condition?) {
+open class Text(val content: String, val condition: Condition?) {
 
     val dynamic = papiRegex.containsMatchIn(content)
 
-    fun process(sender: CommandSender, vararg vars: String): ComponentText {
+    open fun process(sender: CommandSender, vararg vars: String): ComponentText {
         var text = KetherHandler.parseInline(content, sender)
-        if (sender is Player) {
-            if (dynamic) {
-                text = text.setPlaceholders(sender)
-            }
-            text = hookItemsAdder.replaceFontImages(text, null)
+        if (sender is Player && dynamic) {
+            text = text.setPlaceholders(sender)
         }
+        text = hookItemsAdder.replaceFontImages(text, null)
         text = text.replaceWithOrder(*vars)
         
         // 使用 MiniMessage 解析

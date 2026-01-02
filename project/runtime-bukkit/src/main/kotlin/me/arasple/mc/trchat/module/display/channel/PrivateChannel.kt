@@ -1,6 +1,7 @@
 package me.arasple.mc.trchat.module.display.channel
 
 import me.arasple.mc.trchat.api.event.TrChatEvent
+import me.arasple.mc.trchat.api.event.TrChatSendEvent
 import me.arasple.mc.trchat.api.impl.BukkitProxyManager
 import me.arasple.mc.trchat.module.display.channel.obj.ChannelBindings
 import me.arasple.mc.trchat.module.display.channel.obj.ChannelEvents
@@ -164,8 +165,8 @@ class PrivateChannel(
             ?: return ChannelExecuteResult(failedReason = ChannelExecuteResult.FailReason.EVENT)
         plain = msg.toPlainText()
 
-        val send = Components.empty()
         val msgComponent = Components.empty()
+        var send = Components.empty()
         sender.firstOrNull { it.condition.pass(player) }?.let { format ->
             format.prefix
                 .mapNotNull { prefix -> prefix.value.firstOrNull { it.condition.pass(player) }?.content?.toTextComponent(player) }
@@ -179,7 +180,7 @@ class PrivateChannel(
                 .forEach { suffix -> send.append(suffix) }
         } ?: return ChannelExecuteResult(failedReason = ChannelExecuteResult.FailReason.NO_FORMAT)
 
-        val receive = Components.empty()
+        var receive = Components.empty()
         receiver.firstOrNull { it.condition.pass(player) }?.let { format ->
             format.prefix
                 .mapNotNull { prefix -> prefix.value.firstOrNull { it.condition.pass(player) }?.content?.toTextComponent(player) }
@@ -198,7 +199,11 @@ class PrivateChannel(
         if (!events.send(player, to, plain)) {
             return ChannelExecuteResult(failedReason = ChannelExecuteResult.FailReason.EVENT)
         }
-        player.sendComponent(player, send)
+        val senderEvent = TrChatSendEvent(this, session, send, type = TrChatSendEvent.Type.SENDER)
+        if (senderEvent.call()) {
+            send = senderEvent.component
+            player.sendComponent(player, send)
+        }
 
         PlayerData.spying.forEach {
             Bukkit.getPlayer(it)?.sendLang("Private-Message-Spy-Format", player.name, to, msgComponent.toLegacyText())
@@ -208,6 +213,12 @@ class PrivateChannel(
         CommandReply.lastMessageFrom[to] = player.name
         ChatLogs.logPrivate(player.name, to, plain)
         Metrics.increase(0)
+
+        val receiverEvent = TrChatSendEvent(this, session, receive, type = TrChatSendEvent.Type.RECEIVER)
+        if (!receiverEvent.call()) {
+            return ChannelExecuteResult(failedReason = ChannelExecuteResult.FailReason.EVENT)
+        }
+        receive = receiverEvent.component
 
         if (settings.proxy && BukkitProxyManager.processor != null) {
             BukkitProxyManager.sendPrivateRaw(

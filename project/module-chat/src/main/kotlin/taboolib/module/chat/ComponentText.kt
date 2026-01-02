@@ -1,6 +1,7 @@
 package taboolib.module.chat
 
 import java.awt.Color
+import java.util.*
 
 /**
  * TabooLib
@@ -44,6 +45,9 @@ interface ComponentText : Source {
 
     /** 添加选择器文本块 */
     fun appendSelector(selector: String): ComponentText
+
+    /** 添加玩家头像文本块 */
+    fun appendHead(name: String? = null, id: UUID? = null, hat: Boolean = true, texture: String? = null): ComponentText
 
     /** 显示文本 */
     fun hoverText(text: String): ComponentText

@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 dependencies {
     compileOnly(project(":project:common"))
-//    compileOnly(project(":project:module-chat"))
+    compileOnly(project(":project:module-chat"))
     compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 }
 

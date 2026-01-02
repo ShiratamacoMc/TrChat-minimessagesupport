@@ -25,7 +25,7 @@ import taboolib.module.chat.impl.AdventureComponent
  * @author ItsFlicker
  * @since 2021/12/12 13:46
  */
-class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style: List<Style>) : JsonComponent(null, style) {
+class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style: List<Style>) : JsonComponent(style = style) {
 
     private fun processComponent(sender: CommandSender, msg: TextComponent, disabledFunctions: List<String>, depth: Int = 1): TextComponent {
         val children = msg.children().map { processComponent(sender, it as TextComponent, disabledFunctions, depth + 1) }

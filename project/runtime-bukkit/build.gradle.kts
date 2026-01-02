@@ -5,7 +5,7 @@ repositories {
 dependencies {
     compileOnly(project(":project:common"))
     compileOnly(project(":project:module-adventure"))
-//    compileOnly(project(":project:module-chat"))
+    compileOnly(project(":project:module-chat"))
     compileOnly(project(":project:module-compat"))
     compileOnly(project(":project:module-nms"))
     compileOnly("ink.ptms.core:v12105:12105:universal")

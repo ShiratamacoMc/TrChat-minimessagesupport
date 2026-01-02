@@ -2,6 +2,7 @@ package me.arasple.mc.trchat.module.display.channel
 
 import me.arasple.mc.trchat.TrChat
 import me.arasple.mc.trchat.api.event.TrChatEvent
+import me.arasple.mc.trchat.api.event.TrChatSendEvent
 import me.arasple.mc.trchat.api.impl.BukkitProxyManager
 import me.arasple.mc.trchat.module.conf.file.Settings
 import me.arasple.mc.trchat.module.display.channel.obj.*
@@ -153,7 +154,7 @@ open class Channel(
         ChatLogs.logNormal(player.name, plain)
         Metrics.increase(0)
 
-        val component = Components.empty()
+        var component = Components.empty()
         formats.firstOrNull { it.condition.pass(player) }?.let { format ->
             format.prefix
                 .mapNotNull { prefix -> prefix.value.firstOrNull { it.condition.pass(player) }?.content?.toTextComponent(player) }
@@ -169,6 +170,11 @@ open class Channel(
             session.cancelChat = false
             return ChannelExecuteResult(failedReason = ChannelExecuteResult.FailReason.EVENT)
         }
+        val sendEvent = TrChatSendEvent(this, session, component)
+        if (!sendEvent.call()) {
+            return ChannelExecuteResult(failedReason = ChannelExecuteResult.FailReason.EVENT)
+        }
+        component = sendEvent.component
         // Proxy
         if (settings.proxy) {
             if (BukkitProxyManager.processor != null || settings.forceProxy) {
