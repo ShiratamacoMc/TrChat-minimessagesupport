@@ -61,6 +61,10 @@ object MiniMessageUtil {
 
     // 检测是否包含MiniMessage格式标签（排除自定义的rainbow和gradient）
     private val minimessageTagPattern = Pattern.compile("<(?!/?(?:rainbow|gradient|r|g)[#>])[^>]+>")
+    
+    // 缓存 Regex 对象以提升性能
+    private val hexPattern1 = Regex("&#([A-Fa-f0-9]{6})")
+    private val hexPattern2 = Regex("&\\{#([A-Fa-f0-9]{6})}")
 
     /**
      * 检测字符串是否包含MiniMessage格式
@@ -97,17 +101,18 @@ object MiniMessageUtil {
      * 转换hex颜色格式到MiniMessage
      * &#FFFFFF -> <#FFFFFF>
      * &{#FFFFFF} -> <#FFFFFF>
+     * 优化：使用缓存的 Regex 对象
      */
     private fun convertHexToMiniMessage(text: String): String {
         var result = text
         
         // 处理 &#FFFFFF 格式
-        result = result.replace(Regex("&#([A-Fa-f0-9]{6})")) { matchResult ->
+        result = hexPattern1.replace(result) { matchResult ->
             "<#${matchResult.groupValues[1]}>"
         }
         
         // 处理 &{#FFFFFF} 格式
-        result = result.replace(Regex("&\\{#([A-Fa-f0-9]{6})}")) { matchResult ->
+        result = hexPattern2.replace(result) { matchResult ->
             "<#${matchResult.groupValues[1]}>"
         }
         
