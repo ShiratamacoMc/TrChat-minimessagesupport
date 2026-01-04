@@ -21,6 +21,7 @@ object MessageColors {
         "gradients",
         "hex",
         "legacy",
+        "minimessage",
         "chat",
         "anvil",
         "sign",
@@ -40,6 +41,7 @@ object MessageColors {
     private fun replaceWithPermission(sender: CommandSender, s: String, nodes: List<String>): String {
         // 检查是否包含MiniMessage格式
         val hasMiniMessage = MiniMessageUtil.containsMiniMessageFormat(s)
+        val hasLegacyColor = s.contains('&') || s.contains('§')
         
         if (nodes.any { node -> sender.hasPermission("$node*") }) {
             // 如果有全部权限，使用混合格式处理（支持MiniMessage和旧格式）
@@ -53,6 +55,12 @@ object MessageColors {
             }
         }
         var string = s
+
+        // 检查 MiniMessage 权限，如果没有权限则移除 MiniMessage 标签
+        if (hasMiniMessage && !nodes.any { node -> sender.hasPermission(node + "minimessage") }) {
+            // 移除所有 MiniMessage 标签（保留标签内的文本内容）
+            string = MiniMessageUtil.stripMiniMessageTags(string)
+        }
 
         // 2025/7/14 必须清除无权限的颜色，否则会被CustomColor连带处理
         string = if (nodes.any { node -> sender.hasPermission(node + "rainbow") }) {

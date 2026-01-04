@@ -21,8 +21,8 @@ public final class HexUtils {
     public static final Pattern RAINBOW_PATTERN = Pattern.compile("<(?<type>rainbow|r)(#(?<speed>\\d+))?(:(?<saturation>\\d*\\.?\\d+))?(:(?<brightness>\\d*\\.?\\d+))?(:(?<loop>l|L|loop))?>");
     public static final Pattern GRADIENT_PATTERN = Pattern.compile("<(?<type>gradient|g)(#(?<speed>\\d+))?(?<hex>(:#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})){2,})(:(?<loop>l|L|loop))?>");
     public static final List<Pattern> HEX_PATTERNS = Arrays.asList(
-            Pattern.compile("&\\{#([A-Fa-f0-9]){6}}"), // &{#FFFFFF}
-            Pattern.compile("&#([A-Fa-f0-9]){6}")    // &#FFFFFF
+            Pattern.compile("&\\{#([A-Fa-f0-9]{6})}"), // &{#FFFFFF}
+            Pattern.compile("&#([A-Fa-f0-9]{6})")    // &#FFFFFF
     );
 
     private static final Pattern STOP = Pattern.compile(

@@ -22,6 +22,15 @@ fun String.colorify() = HexUtils.colorify(this)
  */
 fun String.parseMiniMessage() = MiniMessageUtil.parseMixedFormat(this)
 
+/**
+ * 根据权限解析消息
+ * @param hasMiniMessagePermission 是否有MiniMessage权限
+ * @param hasLegacyPermission 是否有Legacy权限
+ * @return 解析后的Component
+ */
+fun String.parseWithPermission(hasMiniMessagePermission: Boolean, hasLegacyPermission: Boolean) = 
+    MiniMessageUtil.parseWithPermission(this, hasMiniMessagePermission, hasLegacyPermission)
+
 fun String.parseLegacy() = HexUtils.parseLegacy(this)
 
 fun String.parseHex() = HexUtils.parseHex(this)
