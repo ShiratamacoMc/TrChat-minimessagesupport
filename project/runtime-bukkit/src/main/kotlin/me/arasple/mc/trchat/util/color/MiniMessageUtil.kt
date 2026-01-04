@@ -55,7 +55,7 @@ object MiniMessageUtil {
         'k' to "<obfuscated>",
         'l' to "<bold>",
         'm' to "<strikethrough>",
-        'n' to "<underline>",
+        'n' to "<underlined>",
         'o' to "<italic>"
     )
 
@@ -63,14 +63,23 @@ object MiniMessageUtil {
     private val minimessageTagPattern = Pattern.compile("<(?!/?(?:rainbow|gradient|r|g)[#>])[^>]+>")
     
     // 缓存 Regex 对象以提升性能
-    private val hexPattern1 = Regex("&#([A-Fa-f0-9]{6})")
-    private val hexPattern2 = Regex("&\\{#([A-Fa-f0-9]{6})}")
+    private val hexPattern1 = Regex("&#[A-Fa-f0-9]{6}")
+    private val hexPattern2 = Regex("&\\{#[A-Fa-f0-9]{6}}")
 
     /**
      * 检测字符串是否包含MiniMessage格式
      */
     fun containsMiniMessageFormat(text: String): Boolean {
         return minimessageTagPattern.matcher(text).find()
+    }
+
+    /**
+     * 移除所有 MiniMessage 标签，保留标签内的文本内容
+     * 例如：<red>Hello</red> -> Hello
+     */
+    fun stripMiniMessageTags(text: String): String {
+        // 移除所有 MiniMessage 标签（包括开始和结束标签）
+        return text.replace(Regex("<[^>]+>"), "")
     }
 
     /**
@@ -108,12 +117,14 @@ object MiniMessageUtil {
         
         // 处理 &#FFFFFF 格式
         result = hexPattern1.replace(result) { matchResult ->
-            "<#${matchResult.groupValues[1]}>"
+            val hexCode = matchResult.value.substring(2) // 移除 &#
+            "<#$hexCode>"
         }
         
         // 处理 &{#FFFFFF} 格式
         result = hexPattern2.replace(result) { matchResult ->
-            "<#${matchResult.groupValues[1]}>"
+            val hexCode = matchResult.value.substring(3, matchResult.value.length - 1) // 移除 &{# 和 }
+            "<#$hexCode>"
         }
         
         return result
@@ -124,6 +135,7 @@ object MiniMessageUtil {
      * &a -> <green>
      * &l -> <bold>
      * 优化：使用 StringBuilder 提升性能
+     * 注意：跳过已经转换的 hex 颜色代码（<#XXXXXX>）和 Minecraft 原生 RGB 格式（§x§R§R§G§G§B§B）
      */
     private fun convertLegacyCodesToMiniMessage(text: String): String {
         if (text.length < 2) return text
@@ -132,6 +144,62 @@ object MiniMessageUtil {
         var i = 0
         
         while (i < text.length) {
+            // 跳过 Minecraft 原生 RGB 格式：§x§R§R§G§G§B§B (14个字符)
+            if (i < text.length - 13 && 
+                (text[i] == '§' || text[i] == '&') && 
+                text[i + 1].lowercaseChar() == 'x') {
+                // 检查后面是否跟着 12 个字符（§R§R§G§G§B§B）
+                var isValidMinecraftRgb = true
+                for (j in 2..13 step 2) {
+                    if (i + j >= text.length || (text[i + j] != '§' && text[i + j] != '&')) {
+                        isValidMinecraftRgb = false
+                        break
+                    }
+                    if (i + j + 1 >= text.length) {
+                        isValidMinecraftRgb = false
+                        break
+                    }
+                    val hexChar = text[i + j + 1].lowercaseChar()
+                    if (!hexChar.isDigit() && hexChar !in 'a'..'f') {
+                        isValidMinecraftRgb = false
+                        break
+                    }
+                }
+                
+                if (isValidMinecraftRgb) {
+                    // 提取 RGB 值并转换为 MiniMessage 格式
+                    val r1 = text[i + 3]
+                    val r2 = text[i + 5]
+                    val g1 = text[i + 7]
+                    val g2 = text[i + 9]
+                    val b1 = text[i + 11]
+                    val b2 = text[i + 13]
+                    val hexColor = "<#$r1$r2$g1$g2$b1$b2>"
+                    result.append(hexColor)
+                    i += 14
+                    continue
+                }
+            }
+            
+            // 跳过已经转换的 MiniMessage hex 颜色标签 <#XXXXXX>
+            if (text[i] == '<' && i + 8 < text.length && text[i + 1] == '#') {
+                // 检查是否是有效的 hex 颜色标签
+                var isValidHex = true
+                for (j in 2..7) {
+                    val c = text[i + j]
+                    if (!c.isLetterOrDigit() || (c.isLetter() && !c.lowercaseChar().let { it in 'a'..'f' })) {
+                        isValidHex = false
+                        break
+                    }
+                }
+                if (isValidHex && i + 8 < text.length && text[i + 8] == '>') {
+                    // 这是一个有效的 hex 颜色标签，直接复制
+                    result.append(text.substring(i, i + 9))
+                    i += 9
+                    continue
+                }
+            }
+            
             if (i < text.length - 1 && (text[i] == '&' || text[i] == '§')) {
                 val code = text[i + 1].lowercaseChar()
                 
