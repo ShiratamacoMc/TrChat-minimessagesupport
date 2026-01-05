@@ -301,5 +301,31 @@ object MiniMessageUtil {
             }
         }
     }
+    
+    /**
+     * 根据权限解析消息
+     * @param text 要解析的文本
+     * @param hasMiniMessagePermission 是否有MiniMessage权限
+     * @param hasLegacyPermission 是否有Legacy权限
+     * @return 解析后的Component
+     */
+    fun parseWithPermission(text: String, hasMiniMessagePermission: Boolean, hasLegacyPermission: Boolean): Component {
+        if (text.isEmpty()) {
+            return Component.empty()
+        }
+        
+        return if (hasMiniMessagePermission) {
+            // 有MiniMessage权限，解析MiniMessage格式
+            parseMixedFormat(text)
+        } else if (hasLegacyPermission) {
+            // 只有Legacy权限，只解析Legacy格式
+            // 移除MiniMessage标签，然后解析Legacy格式
+            val strippedText = stripMiniMessageTags(text)
+            parseMixedFormat(strippedText)
+        } else {
+            // 没有任何颜色权限，发送纯文本
+            val strippedText = stripMiniMessageTags(text)
+            Component.text(strippedText)
+        }
+    }
 }
-

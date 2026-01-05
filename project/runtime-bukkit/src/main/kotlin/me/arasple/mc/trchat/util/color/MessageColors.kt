@@ -41,6 +41,7 @@ object MessageColors {
     private fun replaceWithPermission(sender: CommandSender, s: String, nodes: List<String>): String {
         // 检查是否包含MiniMessage格式
         val hasMiniMessage = MiniMessageUtil.containsMiniMessageFormat(s)
+        val hasLegacyColor = s.contains('&') || s.contains('§')
         
         if (nodes.any { node -> sender.hasPermission("$node*") }) {
             // 如果有全部权限，使用混合格式处理（支持MiniMessage和旧格式）

@@ -7,6 +7,7 @@ import me.arasple.mc.trchat.module.internal.script.Condition
 import me.arasple.mc.trchat.util.color.CustomColor
 import me.arasple.mc.trchat.util.color.MiniMessageUtil
 import me.arasple.mc.trchat.util.color.parseMiniMessage
+import me.arasple.mc.trchat.util.color.parseWithPermission
 import me.arasple.mc.trchat.util.isDragonCoreHooked
 import me.arasple.mc.trchat.util.pass
 import me.arasple.mc.trchat.util.session
@@ -62,9 +63,10 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
 
         // 非玩家 不处理functions
         if (sender !is Player) {
-            // 使用 MiniMessage 解析
+            // 非玩家默认有所有权限，使用 MiniMessage 解析
             if (Components.useAdventure) {
-                val parsedComponent = message.parseMiniMessage()
+                // 非玩家默认有所有权限
+                val parsedComponent = message.parseWithPermission(true, true)
                 return AdventureComponent(parsedComponent)
             } else {
                 // 非 Adventure 环境，使用 Components.text
@@ -93,7 +95,12 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
             // 使用 MiniMessage 解析
             val partText = part.text
             if (Components.useAdventure) {
-                val parsedComponent = partText.parseMiniMessage()
+                // 检查权限
+                val hasMiniMessagePermission = sender.hasPermission("trchat.color.minimessage")
+                val hasLegacyPermission = sender.hasPermission("trchat.color.legacy")
+                
+                // 使用新的权限解析方法
+                val parsedComponent = partText.parseWithPermission(hasMiniMessagePermission, hasLegacyPermission)
                 component.append(AdventureComponent(parsedComponent))
             } else {
                 // 非 Adventure 环境，使用 Components.text
@@ -106,11 +113,16 @@ class MsgComponent(val defaultColor: List<Pair<CustomColor, Condition?>>, style:
     override fun toTextComponent(sender: CommandSender, vararg vars: String): ComponentText {
         val message = vars[0]
         
-        // 直接使用MiniMessage解析
+        // 根据权限处理消息
         val component = if (isDragonCoreHooked) {
             Components.text(message, color = false)
         } else {
-            val parsedComponent = message.parseMiniMessage()
+            // 检查权限
+            val hasMiniMessagePermission = sender.hasPermission("trchat.color.minimessage")
+            val hasLegacyPermission = sender.hasPermission("trchat.color.legacy")
+            
+            // 使用新的权限解析方法
+            val parsedComponent = message.parseWithPermission(hasMiniMessagePermission, hasLegacyPermission)
             AdventureComponent(parsedComponent)
         }
         
