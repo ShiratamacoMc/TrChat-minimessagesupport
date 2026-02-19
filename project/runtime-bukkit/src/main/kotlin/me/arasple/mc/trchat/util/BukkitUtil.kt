@@ -36,15 +36,15 @@ fun Player.passPermission(permission: String?): Boolean {
             || hasPermission(permission)
 }
 
-fun String.setPlaceholders(sender: CommandSender): String {
+fun String.setPlaceholders(sender: CommandSender?): String {
     return try {
-        if (sender is OfflinePlayer) {
+        if (sender is Player || sender is OfflinePlayer) {
             PlaceholderAPI.setPlaceholders(sender, this)
         } else {
-            this
+            PlaceholderAPI.setPlaceholders(null, this)
         }
     } catch (t: Throwable) {
-        t.print("Error occurred when parsing placeholder! This is not a bug of TrChat! 这不是 TrChat 的问题!")
+        t.print("Error occurred when parsing placeholder! This is not a bug of TrChat! 这很可能不是 TrChat 的问题!")
         this
     }
 }

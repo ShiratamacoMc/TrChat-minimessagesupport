@@ -2,7 +2,6 @@ package me.arasple.mc.trchat.module.internal.data
 
 import me.arasple.mc.trchat.module.display.channel.Channel
 import me.arasple.mc.trchat.util.parseString
-import me.arasple.mc.trchat.util.toUUID
 import org.bukkit.OfflinePlayer
 import taboolib.common5.cbool
 import taboolib.common5.clong
@@ -37,11 +36,12 @@ class PlayerData(val uuid: UUID) {
 
     val muteReason get() = uuid.getAutoDataContainer()["mute_reason"] ?: "null"
 
-    val ignored get() = uuid.getAutoDataContainer()["ignored"]
+    var ignored get() = uuid.getAutoDataContainer()["ignored"]
         ?.takeIf { it.isNotBlank() }
         ?.split(",")
-        ?.map { it.toUUID() }
-        ?: emptyList()
+        ?.toSet()
+        ?: emptySet()
+        set(value) { uuid.getAutoDataContainer()["ignored"] = value.joinToString(",") }
 
     fun setChannel(channel: Channel) {
         uuid.getAutoDataContainer()["channel"] = channel.id
@@ -71,24 +71,20 @@ class PlayerData(val uuid: UUID) {
     }
 
     fun addIgnored(uuid: UUID) {
-        val list = uuid.getAutoDataContainer()["ignored"]?.takeIf { it.isNotBlank() }?.split(",") ?: listOf()
-        val new = list + uuid.parseString()
-        uuid.getAutoDataContainer()["ignored"] = new.joinToString(",")
+        ignored = ignored + uuid.parseString()
     }
 
     fun removeIgnored(uuid: UUID) {
-        val list = uuid.getAutoDataContainer()["ignored"]?.takeIf { it.isNotBlank() }?.split(",") ?: return
-        val new = list - uuid.parseString()
-        uuid.getAutoDataContainer()["ignored"] = new.joinToString(",")
+        ignored = ignored - uuid.parseString()
     }
 
-    fun hasIgnored(uuid: UUID): Boolean {
-        val list = uuid.getAutoDataContainer()["ignored"]?.takeIf { it.isNotBlank() }?.split(",") ?: return false
-        return uuid.parseString() in list
+    fun hasIgnored(uuid: UUID?): Boolean {
+        if (uuid == null) return false
+        return uuid.parseString() in ignored
     }
 
     fun switchIgnored(uuid: UUID): Boolean {
-        return if (ignored.contains(uuid)) {
+        return if (hasIgnored(uuid)) {
             removeIgnored(uuid)
             false
         } else {

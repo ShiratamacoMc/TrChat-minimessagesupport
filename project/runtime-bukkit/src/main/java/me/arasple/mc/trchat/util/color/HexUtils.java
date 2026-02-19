@@ -106,33 +106,31 @@ public final class HexUtils {
 
             int stop = findStop(parsed, matcher.end());
             String content = parsed.substring(matcher.end(), stop);
-            int contentLength = content.length();
-            char[] chars = content.toCharArray();
-            for (int i = 0; i < chars.length - 1; i++)
-                if (chars[i] == '&' && "KkLlMmNnOoRr".indexOf(chars[i + 1]) > -1)
-                    contentLength -= 2;
 
-            int length = looping ? Math.min(contentLength, CHARS_UNTIL_LOOP) : contentLength;
+            // 使用 codePoint 遍历，避免 emoji 被拆开
+            int length = content.codePointCount(0, content.length());
+            if (looping) length = Math.min(length, CHARS_UNTIL_LOOP);
 
-            ColorGenerator rainbow;
-            if (speed == -1) {
-                rainbow = new Rainbow(length, saturation, brightness);
-            } else {
-                rainbow = new AnimatedRainbow(length, saturation, brightness, speed);
-            }
+            ColorGenerator rainbow = (speed == -1)
+                    ? new Rainbow(length, saturation, brightness)
+                    : new AnimatedRainbow(length, saturation, brightness, speed);
 
             String compoundedFormat = ""; // Carry the format codes through the rainbow gradient
-            for (int i = 0; i < chars.length; i++) {
-                char c = chars[i];
-                if (c == '&' && i + 1 < chars.length) {
-                    char next = chars[i + 1];
+            for (int i = 0; i < content.length(); ) {
+                int cp = content.codePointAt(i);
+                int charCount = Character.charCount(cp);
+
+                if (cp == '&' && i + 1 < content.length()) {
+                    char next = content.charAt(i + 1);
                     if (HexKt.isFormat(next)) {
                         compoundedFormat += String.valueOf(ChatColor.COLOR_CHAR) + next;
-                        i++; // Skip next character
+                        i += 2; // Skip next character
                         continue;
                     }
                 }
-                parsedRainbow.append(rainbow.nextChatColor()).append(compoundedFormat).append(c);
+
+                parsedRainbow.append(rainbow.nextChatColor()).append(compoundedFormat).appendCodePoint(cp);
+                i += charCount;
             }
 
             String before = parsed.substring(0, matcher.start());
@@ -168,32 +166,30 @@ public final class HexUtils {
 
             int stop = findStop(parsed, matcher.end());
             String content = parsed.substring(matcher.end(), stop);
-            int contentLength = content.length();
-            char[] chars = content.toCharArray();
-            for (int i = 0; i < chars.length - 1; i++)
-                if (chars[i] == '&' && "KkLlMmNnOoRr".indexOf(chars[i + 1]) > -1)
-                    contentLength -= 2;
 
-            int length = looping ? Math.min(contentLength, CHARS_UNTIL_LOOP) : contentLength;
-            ColorGenerator gradient;
-            if (speed == -1) {
-                gradient = new Gradient(hexSteps, length);
-            } else {
-                gradient = new AnimatedGradient(hexSteps, length, speed);
-            }
+            int length = content.codePointCount(0, content.length());
+            if (looping) length = Math.min(length, CHARS_UNTIL_LOOP);
+
+            ColorGenerator gradient = (speed == -1)
+                    ? new Gradient(hexSteps, length)
+                    : new AnimatedGradient(hexSteps, length, speed);
 
             String compoundedFormat = ""; // Carry the format codes through the gradient
-            for (int i = 0; i < chars.length; i++) {
-                char c = chars[i];
-                if (c == '&' && i + 1 < chars.length) {
-                    char next = chars[i + 1];
+            for (int i = 0; i < content.length(); ) {
+                int cp = content.codePointAt(i);
+                int charCount = Character.charCount(cp);
+
+                if (cp == '&' && i + 1 < content.length()) {
+                    char next = content.charAt(i + 1);
                     if (HexKt.isFormat(next)) {
                         compoundedFormat += String.valueOf(ChatColor.COLOR_CHAR) + next;
-                        i++; // Skip next character
+                        i += 2; // Skip next character
                         continue;
                     }
                 }
-                parsedGradient.append(gradient.nextChatColor()).append(compoundedFormat).append(c);
+
+                parsedGradient.append(gradient.nextChatColor()).append(compoundedFormat).appendCodePoint(cp);
+                i += charCount;
             }
 
             String before = parsed.substring(0, matcher.start());

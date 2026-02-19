@@ -59,7 +59,7 @@ object BukkitComponentManager : ComponentManager {
             is UUID -> sender
             else -> null
         }
-        if (commandSender is Player && uuid in commandSender.data.ignored) {
+        if (commandSender is Player && commandSender.data.hasIgnored(uuid)) {
             return
         }
         val event = TrChatReceiveEvent(commandSender, uuid, component)

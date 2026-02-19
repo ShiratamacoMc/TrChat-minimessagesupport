@@ -3,6 +3,7 @@ package me.arasple.mc.trchat.module.internal.command.main
 import me.arasple.mc.trchat.api.impl.BukkitProxyManager
 import me.arasple.mc.trchat.module.conf.file.Settings
 import me.arasple.mc.trchat.util.data
+import me.arasple.mc.trchat.util.toUUID
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import taboolib.common.LifeCycle
@@ -27,7 +28,7 @@ object CommandIgnore {
         if (Settings.conf.getStringList("Options.Disabled-Commands").contains("ignore")) return
         command("ignore", listOf("trignore"), permission = "trchat.command.ignore") {
             dynamic("player") {
-                suggestion<Player> { sender, _ ->
+                suggestion<Player>(uncheck = true) { sender, _ ->
                     BukkitProxyManager.getPlayerNames(sender.hasPermission("trchat.bypass.vanish")).keys.toList()
                 }
                 execute<Player> { sender, ctx, _ ->
@@ -73,7 +74,7 @@ object CommandIgnore {
             execute<Player> { sender, _, _ ->
                 sender.sendLang(
                     "Ignore-List",
-                    sender.data.ignored.map { Bukkit.getOfflinePlayer(it).name ?: it }.joinToString(", ")
+                    sender.data.ignored.joinToString(", ") { Bukkit.getOfflinePlayer(it.toUUID()).name ?: it }
                 )
             }
             incorrectSender { sender, _ ->

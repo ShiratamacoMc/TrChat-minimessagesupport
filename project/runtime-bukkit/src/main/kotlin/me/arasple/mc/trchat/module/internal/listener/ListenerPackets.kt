@@ -28,7 +28,13 @@ object ListenerPackets {
     fun secure(e: PacketSendEvent) {
         if (!cheatClientSecureChat) return
         if (versionId < 11902) return
+//        info(e.packet.name)
         when (e.packet.name) {
+//            "ClientboundBundlePacket" -> {
+//                (e.packet.source.getProperty<Any>("packets") as Iterable<*>).forEach {
+//                    info(it?.javaClass?.name)
+//                }
+//            }
             "ClientboundServerDataPacket" -> {
                 if (versionId < 12005) e.packet.write("enforcesSecureChat", true)
             }

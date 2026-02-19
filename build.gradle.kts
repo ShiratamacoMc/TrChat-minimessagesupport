@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    id("io.izzel.taboolib") version "2.0.27"
+    id("io.izzel.taboolib") version "2.0.30"
     id("org.jetbrains.kotlin.jvm") version "2.2.20"
 }
 
@@ -41,7 +41,7 @@ subprojects {
 //            disableOnUnsupportedVersion = false
         }
         version {
-            taboolib = "6.2.4-5902762"
+            taboolib = "6.2.4-86dd2bf"
             coroutines = null
         }
     }
